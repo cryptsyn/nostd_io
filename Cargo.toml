@@ -1,0 +1,36 @@
+[package]
+name = "nostd_io"
+version = "0.1.0"
+authors = ["wmiller848 <wmiller848@users.noreply.github.com>"]
+
+[lib]
+crate-type = ["rlib"]
+
+[profile.dev]
+opt-level = 0
+debug = true
+debug-assertions = true
+panic = 'abort'
+
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+panic = 'abort'
+
+[profile.test]
+opt-level = 1
+debug = 2
+debug-assertions = true
+panic = 'abort'
+
+[profile.bench]
+opt-level = 3
+debug = false
+debug-assertions = false
+panic = 'abort'
+
+[dependencies]
+memchr = { version = "1.0", default-features = false }
+libc = { version = "0.2", default-features = false }
+nostd_error = { git = "https://github.com/wmiller848/nostd_error.git" }
