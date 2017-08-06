@@ -9,7 +9,6 @@
 // except according to those terms.
 
 use nostd_error as error;
-use alloc::String;
 use core::str;
 use core::fmt;
 use core::result;
@@ -17,15 +16,12 @@ use core::slice;
 use core::convert::From;
 use alloc::boxed::Box;
 use alloc::borrow::ToOwned;
+use alloc::String;
+use alloc::string::ToString;
 use libc::{self, c_int, c_char, c_void};
 // use ffi::{CString, CStr, OsString, OsStr};
 
 const TMPBUF_SZ: usize = 128;
-
-extern "C" {
-    #[cfg_attr(target_os = "macos", link_name = "__error")]
-    fn errno_location() -> *mut c_int;
-}
 
 /// A specialized [`Result`](../result/enum.Result.html) type for I/O
 /// operations.
@@ -233,23 +229,6 @@ impl Error {
                 error: error,
             })),
         }
-    }
-
-    /// Returns an error representing the last OS error which occurred.
-    ///
-    /// This function reads the value of `errno` for the target platform (e.g.
-    /// `GetLastError` on Windows) and will return a corresponding instance of
-    /// `Error` for the error code.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::io::Error;
-    ///
-    /// println!("last OS error: {:?}", Error::last_os_error());
-    /// ```
-    pub fn last_os_error() -> Error {
-        Error::from_raw_os_error(unsafe { (*errno_location()) as i32 } as i32)
     }
 
     /// Creates a new instance of an `Error` from a particular OS error code.
@@ -529,23 +508,24 @@ fn _assert_error_is_sync_send() {
 }
 
 fn error_string(errno: i32) -> String {
-    extern "C" {
-        #[cfg_attr(any(target_os = "linux", target_env = "newlib"),
-        link_name = "__xpg_strerror_r")]
-        fn strerror_r(errnum: c_int, buf: *mut c_char, buflen: libc::size_t) -> c_int;
-    }
+    // extern "C" {
+    // #[cfg_attr(any(target_os = "linux", target_env = "newlib"),
+    // link_name = "__xpg_strerror_r")]
+    // fn strerror_r(errnum: c_int, buf: *mut c_char, buflen: libc::size_t) -> c_int;
+    // }
 
-    let mut buf = [0 as c_char; TMPBUF_SZ];
+    // let mut buf = [0 as c_char; TMPBUF_SZ];
 
-    let p = buf.as_mut_ptr();
-    unsafe {
-        if strerror_r(errno as c_int, p, buf.len()) < 0 {
-            panic!("strerror_r failure");
-        }
+    // let p = buf.as_mut_ptr();
+    // unsafe {
+    // if strerror_r(errno as c_int, p, buf.len()) < 0 {
+    // panic!("strerror_r failure");
+    // }
 
-        let p = p as *const _;
-        str::from_utf8(slice::from_raw_parts(p, buf.len())).unwrap().to_owned()
-    }
+    // let p = p as *const _;
+    // str::from_utf8(slice::from_raw_parts(p, buf.len())).unwrap().to_owned()
+    // }
+    errno.to_string()
 }
 
 
