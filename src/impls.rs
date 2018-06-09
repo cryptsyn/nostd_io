@@ -8,20 +8,21 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use core::cmp;
-use core::fmt;
-use core::mem;
 use alloc::Vec;
 use alloc::String;
 use alloc::boxed::Box;
-use super::{SeekFrom, Read, Initializer, Write, Seek, BufRead, Error, ErrorKind, Result};
+
+use core::cmp;
+use super::{SeekFrom, Read, Initializer, Write, Seek, BufRead, Error, ErrorKind};
+use core::fmt;
+use core::mem;
 
 // =============================================================================
 // Forwarding implementations
 
 impl<'a, R: Read + ?Sized> Read for &'a mut R {
     #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+    fn read(&mut self, buf: &mut [u8]) -> super::Result<usize> {
         (**self).read(buf)
     }
 
@@ -31,50 +32,50 @@ impl<'a, R: Read + ?Sized> Read for &'a mut R {
     }
 
     #[inline]
-    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> Result<usize> {
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> super::Result<usize> {
         (**self).read_to_end(buf)
     }
 
     #[inline]
-    fn read_to_string(&mut self, buf: &mut String) -> Result<usize> {
+    fn read_to_string(&mut self, buf: &mut String) -> super::Result<usize> {
         (**self).read_to_string(buf)
     }
 
     #[inline]
-    fn read_exact(&mut self, buf: &mut [u8]) -> Result<()> {
+    fn read_exact(&mut self, buf: &mut [u8]) -> super::Result<()> {
         (**self).read_exact(buf)
     }
 }
 impl<'a, W: Write + ?Sized> Write for &'a mut W {
     #[inline]
-    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+    fn write(&mut self, buf: &[u8]) -> super::Result<usize> {
         (**self).write(buf)
     }
 
     #[inline]
-    fn flush(&mut self) -> Result<()> {
+    fn flush(&mut self) -> super::Result<()> {
         (**self).flush()
     }
 
     #[inline]
-    fn write_all(&mut self, buf: &[u8]) -> Result<()> {
+    fn write_all(&mut self, buf: &[u8]) -> super::Result<()> {
         (**self).write_all(buf)
     }
 
     #[inline]
-    fn write_fmt(&mut self, fmt: fmt::Arguments) -> Result<()> {
+    fn write_fmt(&mut self, fmt: fmt::Arguments) -> super::Result<()> {
         (**self).write_fmt(fmt)
     }
 }
 impl<'a, S: Seek + ?Sized> Seek for &'a mut S {
     #[inline]
-    fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
+    fn seek(&mut self, pos: SeekFrom) -> super::Result<u64> {
         (**self).seek(pos)
     }
 }
 impl<'a, B: BufRead + ?Sized> BufRead for &'a mut B {
     #[inline]
-    fn fill_buf(&mut self) -> Result<&[u8]> {
+    fn fill_buf(&mut self) -> super::Result<&[u8]> {
         (**self).fill_buf()
     }
 
@@ -84,19 +85,19 @@ impl<'a, B: BufRead + ?Sized> BufRead for &'a mut B {
     }
 
     #[inline]
-    fn read_until(&mut self, byte: u8, buf: &mut Vec<u8>) -> Result<usize> {
+    fn read_until(&mut self, byte: u8, buf: &mut Vec<u8>) -> super::Result<usize> {
         (**self).read_until(byte, buf)
     }
 
     #[inline]
-    fn read_line(&mut self, buf: &mut String) -> Result<usize> {
+    fn read_line(&mut self, buf: &mut String) -> super::Result<usize> {
         (**self).read_line(buf)
     }
 }
 
 impl<R: Read + ?Sized> Read for Box<R> {
     #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+    fn read(&mut self, buf: &mut [u8]) -> super::Result<usize> {
         (**self).read(buf)
     }
 
@@ -106,50 +107,50 @@ impl<R: Read + ?Sized> Read for Box<R> {
     }
 
     #[inline]
-    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> Result<usize> {
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> super::Result<usize> {
         (**self).read_to_end(buf)
     }
 
     #[inline]
-    fn read_to_string(&mut self, buf: &mut String) -> Result<usize> {
+    fn read_to_string(&mut self, buf: &mut String) -> super::Result<usize> {
         (**self).read_to_string(buf)
     }
 
     #[inline]
-    fn read_exact(&mut self, buf: &mut [u8]) -> Result<()> {
+    fn read_exact(&mut self, buf: &mut [u8]) -> super::Result<()> {
         (**self).read_exact(buf)
     }
 }
 impl<W: Write + ?Sized> Write for Box<W> {
     #[inline]
-    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+    fn write(&mut self, buf: &[u8]) -> super::Result<usize> {
         (**self).write(buf)
     }
 
     #[inline]
-    fn flush(&mut self) -> Result<()> {
+    fn flush(&mut self) -> super::Result<()> {
         (**self).flush()
     }
 
     #[inline]
-    fn write_all(&mut self, buf: &[u8]) -> Result<()> {
+    fn write_all(&mut self, buf: &[u8]) -> super::Result<()> {
         (**self).write_all(buf)
     }
 
     #[inline]
-    fn write_fmt(&mut self, fmt: fmt::Arguments) -> Result<()> {
+    fn write_fmt(&mut self, fmt: fmt::Arguments) -> super::Result<()> {
         (**self).write_fmt(fmt)
     }
 }
 impl<S: Seek + ?Sized> Seek for Box<S> {
     #[inline]
-    fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
+    fn seek(&mut self, pos: SeekFrom) -> super::Result<u64> {
         (**self).seek(pos)
     }
 }
 impl<B: BufRead + ?Sized> BufRead for Box<B> {
     #[inline]
-    fn fill_buf(&mut self) -> Result<&[u8]> {
+    fn fill_buf(&mut self) -> super::Result<&[u8]> {
         (**self).fill_buf()
     }
 
@@ -159,12 +160,12 @@ impl<B: BufRead + ?Sized> BufRead for Box<B> {
     }
 
     #[inline]
-    fn read_until(&mut self, byte: u8, buf: &mut Vec<u8>) -> Result<usize> {
+    fn read_until(&mut self, byte: u8, buf: &mut Vec<u8>) -> super::Result<usize> {
         (**self).read_until(byte, buf)
     }
 
     #[inline]
-    fn read_line(&mut self, buf: &mut String) -> Result<usize> {
+    fn read_line(&mut self, buf: &mut String) -> super::Result<usize> {
         (**self).read_line(buf)
     }
 }
@@ -178,7 +179,7 @@ impl<B: BufRead + ?Sized> BufRead for Box<B> {
 /// The slice will be empty when EOF is reached.
 impl<'a> Read for &'a [u8] {
     #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+    fn read(&mut self, buf: &mut [u8]) -> super::Result<usize> {
         let amt = cmp::min(buf.len(), self.len());
         let (a, b) = self.split_at(amt);
 
@@ -201,7 +202,7 @@ impl<'a> Read for &'a [u8] {
     }
 
     #[inline]
-    fn read_exact(&mut self, buf: &mut [u8]) -> Result<()> {
+    fn read_exact(&mut self, buf: &mut [u8]) -> super::Result<()> {
         if buf.len() > self.len() {
             return Err(Error::new(ErrorKind::UnexpectedEof, "failed to fill whole buffer"));
         }
@@ -219,11 +220,19 @@ impl<'a> Read for &'a [u8] {
         *self = b;
         Ok(())
     }
+
+    #[inline]
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> super::Result<usize> {
+        buf.extend_from_slice(*self);
+        let len = self.len();
+        *self = &self[len..];
+        Ok(len)
+    }
 }
 
 impl<'a> BufRead for &'a [u8] {
     #[inline]
-    fn fill_buf(&mut self) -> Result<&[u8]> {
+    fn fill_buf(&mut self) -> super::Result<&[u8]> {
         Ok(*self)
     }
 
@@ -240,7 +249,7 @@ impl<'a> BufRead for &'a [u8] {
 /// The slice will be empty when it has been completely overwritten.
 impl<'a> Write for &'a mut [u8] {
     #[inline]
-    fn write(&mut self, data: &[u8]) -> Result<usize> {
+    fn write(&mut self, data: &[u8]) -> super::Result<usize> {
         let amt = cmp::min(data.len(), self.len());
         let (a, b) = mem::replace(self, &mut []).split_at_mut(amt);
         a.copy_from_slice(&data[..amt]);
@@ -249,7 +258,7 @@ impl<'a> Write for &'a mut [u8] {
     }
 
     #[inline]
-    fn write_all(&mut self, data: &[u8]) -> Result<()> {
+    fn write_all(&mut self, data: &[u8]) -> super::Result<()> {
         if self.write(data)? == data.len() {
             Ok(())
         } else {
@@ -258,7 +267,7 @@ impl<'a> Write for &'a mut [u8] {
     }
 
     #[inline]
-    fn flush(&mut self) -> Result<()> {
+    fn flush(&mut self) -> super::Result<()> {
         Ok(())
     }
 }
@@ -267,26 +276,28 @@ impl<'a> Write for &'a mut [u8] {
 /// The vector will grow as needed.
 impl Write for Vec<u8> {
     #[inline]
-    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+    fn write(&mut self, buf: &[u8]) -> super::Result<usize> {
         self.extend_from_slice(buf);
         Ok(buf.len())
     }
 
     #[inline]
-    fn write_all(&mut self, buf: &[u8]) -> Result<()> {
+    fn write_all(&mut self, buf: &[u8]) -> super::Result<()> {
         self.extend_from_slice(buf);
         Ok(())
     }
 
     #[inline]
-    fn flush(&mut self) -> Result<()> {
+    fn flush(&mut self) -> super::Result<()> {
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use io::prelude::*;
+    use alloc::Vec;
+
+    use super::super::prelude::*;
     use test;
 
     #[bench]

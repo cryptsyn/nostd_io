@@ -8,42 +8,38 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use nostd_error as error;
-use core::str;
+use alloc::boxed::Box;
+
+use std_error as error;
 use core::fmt;
 use core::result;
-use core::slice;
 use core::convert::From;
-use alloc::boxed::Box;
-use alloc::borrow::ToOwned;
-use alloc::String;
-use alloc::string::ToString;
-use libc::{self, c_int, c_char, c_void};
-// use ffi::{CString, CStr, OsString, OsStr};
-
-const TMPBUF_SZ: usize = 128;
 
 /// A specialized [`Result`](../result/enum.Result.html) type for I/O
 /// operations.
 ///
-/// This type is broadly used across `std::io` for any operation which may
+/// This type is broadly used across [`super`] for any operation which may
 /// produce an error.
 ///
-/// This typedef is generally used to avoid writing out `io::Error` directly and
-/// is otherwise a direct mapping to `Result`.
+/// This typedef is generally used to avoid writing out [`io::Error`] directly and
+/// is otherwise a direct mapping to [`Result`].
 ///
-/// While usual Rust style is to import types directly, aliases of `Result`
-/// often are not, to make it easier to distinguish between them. `Result` is
-/// generally assumed to be `std::result::Result`, and so users of this alias
+/// While usual Rust style is to import types directly, aliases of [`Result`]
+/// often are not, to make it easier to distinguish between them. [`Result`] is
+/// generally assumed to be [`std::result::Result`][`Result`], and so users of this alias
 /// will generally use `io::Result` instead of shadowing the prelude's import
-/// of `std::result::Result`.
+/// of [`std::result::Result`][`Result`].
+///
+/// [`super`]: ../io/index.html
+/// [`io::Error`]: ../io/struct.Error.html
+/// [`Result`]: ../result/enum.Result.html
 ///
 /// # Examples
 ///
 /// A convenience function that bubbles an `io::Result` to its caller:
 ///
 /// ```
-/// use std::io;
+/// use super;
 ///
 /// fn get_string() -> io::Result<String> {
 ///     let mut buffer = String::new();
@@ -55,21 +51,28 @@ const TMPBUF_SZ: usize = 128;
 /// ```
 pub type Result<T> = result::Result<T, Error>;
 
-/// The error type for I/O operations of the `Read`, `Write`, `Seek`, and
+/// The error type for I/O operations of the [`Read`], [`Write`], [`Seek`], and
 /// associated traits.
 ///
 /// Errors mostly originate from the underlying OS, but custom instances of
 /// `Error` can be created with crafted error messages and a particular value of
 /// [`ErrorKind`].
 ///
+/// [`Read`]: ../io/trait.Read.html
+/// [`Write`]: ../io/trait.Write.html
+/// [`Seek`]: ../io/trait.Seek.html
 /// [`ErrorKind`]: enum.ErrorKind.html
-#[derive(Debug)]
 pub struct Error {
     repr: Repr,
 }
 
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.repr, f)
+    }
+}
+
 enum Repr {
-    Os(i32),
     Simple(ErrorKind),
     Custom(Box<Custom>),
 }
@@ -77,7 +80,7 @@ enum Repr {
 #[derive(Debug)]
 struct Custom {
     kind: ErrorKind,
-    error: Box<error::Error + Send + Sync>,
+    error: Box<error::Error+Send+Sync>,
 }
 
 /// A list specifying general categories of I/O error.
@@ -183,7 +186,7 @@ impl ErrorKind {
             ErrorKind::Interrupted => "operation interrupted",
             ErrorKind::Other => "other os error",
             ErrorKind::UnexpectedEof => "unexpected end of file",
-            ErrorKind::__Nonexhaustive => unreachable!(),
+            ErrorKind::__Nonexhaustive => unreachable!()
         }
     }
 }
@@ -193,7 +196,9 @@ impl ErrorKind {
 impl From<ErrorKind> for Error {
     #[inline]
     fn from(kind: ErrorKind) -> Error {
-        Error { repr: Repr::Simple(kind) }
+        Error {
+            repr: Repr::Simple(kind)
+        }
     }
 }
 
@@ -208,7 +213,7 @@ impl Error {
     /// # Examples
     ///
     /// ```
-    /// use std::io::{Error, ErrorKind};
+    /// use super::{Error, ErrorKind};
     ///
     /// // errors can be created from strings
     /// let custom_error = Error::new(ErrorKind::Other, "oh no!");
@@ -217,47 +222,18 @@ impl Error {
     /// let custom_error2 = Error::new(ErrorKind::Interrupted, custom_error);
     /// ```
     pub fn new<E>(kind: ErrorKind, error: E) -> Error
-        where E: Into<Box<error::Error + Send + Sync>>
+        where E: Into<Box<error::Error+Send+Sync>>
     {
         Self::_new(kind, error.into())
     }
 
-    fn _new(kind: ErrorKind, error: Box<error::Error + Send + Sync>) -> Error {
+    fn _new(kind: ErrorKind, error: Box<error::Error+Send+Sync>) -> Error {
         Error {
             repr: Repr::Custom(Box::new(Custom {
-                kind: kind,
-                error: error,
-            })),
+                kind,
+                error,
+            }))
         }
-    }
-
-    /// Creates a new instance of an `Error` from a particular OS error code.
-    ///
-    /// # Examples
-    ///
-    /// On Linux:
-    ///
-    /// ```
-    /// # if cfg!(target_os = "linux") {
-    /// use std::io;
-    ///
-    /// let error = io::Error::from_raw_os_error(98);
-    /// assert_eq!(error.kind(), io::ErrorKind::AddrInUse);
-    /// # }
-    /// ```
-    ///
-    /// On Windows:
-    ///
-    /// ```
-    /// # if cfg!(windows) {
-    /// use std::io;
-    ///
-    /// let error = io::Error::from_raw_os_error(10048);
-    /// assert_eq!(error.kind(), io::ErrorKind::AddrInUse);
-    /// # }
-    /// ```
-    pub fn from_raw_os_error(code: i32) -> Error {
-        Error { repr: Repr::Os(code) }
     }
 
     /// Returns the OS error that this error represents (if any).
@@ -269,7 +245,7 @@ impl Error {
     /// # Examples
     ///
     /// ```
-    /// use std::io::{Error, ErrorKind};
+    /// use super::{Error, ErrorKind};
     ///
     /// fn print_os_error(err: &Error) {
     ///     if let Some(raw_os_err) = err.raw_os_error() {
@@ -288,7 +264,6 @@ impl Error {
     /// ```
     pub fn raw_os_error(&self) -> Option<i32> {
         match self.repr {
-            Repr::Os(i) => Some(i),
             Repr::Custom(..) => None,
             Repr::Simple(..) => None,
         }
@@ -302,7 +277,7 @@ impl Error {
     /// # Examples
     ///
     /// ```
-    /// use std::io::{Error, ErrorKind};
+    /// use super::{Error, ErrorKind};
     ///
     /// fn print_error(err: &Error) {
     ///     if let Some(inner_err) = err.get_ref() {
@@ -319,9 +294,8 @@ impl Error {
     ///     print_error(&Error::new(ErrorKind::Other, "oh no!"));
     /// }
     /// ```
-    pub fn get_ref(&self) -> Option<&(error::Error + Send + Sync + 'static)> {
+    pub fn get_ref(&self) -> Option<&(error::Error+Send+Sync+'static)> {
         match self.repr {
-            Repr::Os(..) => None,
             Repr::Simple(..) => None,
             Repr::Custom(ref c) => Some(&*c.error),
         }
@@ -336,7 +310,7 @@ impl Error {
     /// # Examples
     ///
     /// ```
-    /// use std::io::{Error, ErrorKind};
+    /// use super::{Error, ErrorKind};
     /// use std::{error, fmt};
     /// use std::fmt::Display;
     ///
@@ -389,9 +363,8 @@ impl Error {
     ///     print_error(&change_error(Error::new(ErrorKind::Other, MyError::new())));
     /// }
     /// ```
-    pub fn get_mut(&mut self) -> Option<&mut (error::Error + Send + Sync + 'static)> {
+    pub fn get_mut(&mut self) -> Option<&mut (error::Error+Send+Sync+'static)> {
         match self.repr {
-            Repr::Os(..) => None,
             Repr::Simple(..) => None,
             Repr::Custom(ref mut c) => Some(&mut *c.error),
         }
@@ -405,7 +378,7 @@ impl Error {
     /// # Examples
     ///
     /// ```
-    /// use std::io::{Error, ErrorKind};
+    /// use super::{Error, ErrorKind};
     ///
     /// fn print_error(err: Error) {
     ///     if let Some(inner_err) = err.into_inner() {
@@ -422,11 +395,10 @@ impl Error {
     ///     print_error(Error::new(ErrorKind::Other, "oh no!"));
     /// }
     /// ```
-    pub fn into_inner(self) -> Option<Box<error::Error + Send + Sync>> {
+    pub fn into_inner(self) -> Option<Box<error::Error+Send+Sync>> {
         match self.repr {
-            Repr::Os(..) => None,
             Repr::Simple(..) => None,
-            Repr::Custom(c) => Some(c.error),
+            Repr::Custom(c) => Some(c.error)
         }
     }
 
@@ -435,7 +407,7 @@ impl Error {
     /// # Examples
     ///
     /// ```
-    /// use std::io::{Error, ErrorKind};
+    /// use super::{Error, ErrorKind};
     ///
     /// fn print_error(err: Error) {
     ///     println!("{:?}", err.kind());
@@ -450,7 +422,6 @@ impl Error {
     /// ```
     pub fn kind(&self) -> ErrorKind {
         match self.repr {
-            Repr::Os(code) => decode_error_kind(code),
             Repr::Custom(ref c) => c.kind,
             Repr::Simple(kind) => kind,
         }
@@ -460,13 +431,7 @@ impl Error {
 impl fmt::Debug for Repr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Repr::Os(ref code) => {
-                fmt.debug_struct("Os")
-                    .field("code", code)
-                    .field("message", &error_string(*code))
-                    .finish()
-            }
-            Repr::Custom(ref c) => fmt.debug_tuple("Custom").field(c).finish(),
+            Repr::Custom(ref c) => fmt::Debug::fmt(&c, fmt),
             Repr::Simple(kind) => fmt.debug_tuple("Kind").field(&kind).finish(),
         }
     }
@@ -475,27 +440,22 @@ impl fmt::Debug for Repr {
 impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self.repr {
-            Repr::Os(code) => {
-                let detail = error_string(code);
-                write!(fmt, "{} (os error {})", detail, code)
-            }
             Repr::Custom(ref c) => c.error.fmt(fmt),
             Repr::Simple(kind) => write!(fmt, "{}", kind.as_str()),
         }
     }
 }
 
-impl Error {
+impl error::Error for Error {
     fn description(&self) -> &str {
         match self.repr {
-            Repr::Os(..) | Repr::Simple(..) => self.kind().as_str(),
+            Repr::Simple(..) => self.kind().as_str(),
             Repr::Custom(ref c) => c.error.description(),
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match self.repr {
-            Repr::Os(..) => None,
             Repr::Simple(..) => None,
             Repr::Custom(ref c) => c.error.cause(),
         }
@@ -503,72 +463,35 @@ impl Error {
 }
 
 fn _assert_error_is_sync_send() {
-    fn _is_sync_send<T: Sync + Send>() {}
+    fn _is_sync_send<T: Sync+Send>() {}
     _is_sync_send::<Error>();
-}
-
-fn error_string(errno: i32) -> String {
-    // extern "C" {
-    // #[cfg_attr(any(target_os = "linux", target_env = "newlib"),
-    // link_name = "__xpg_strerror_r")]
-    // fn strerror_r(errnum: c_int, buf: *mut c_char, buflen: libc::size_t) -> c_int;
-    // }
-
-    // let mut buf = [0 as c_char; TMPBUF_SZ];
-
-    // let p = buf.as_mut_ptr();
-    // unsafe {
-    // if strerror_r(errno as c_int, p, buf.len()) < 0 {
-    // panic!("strerror_r failure");
-    // }
-
-    // let p = p as *const _;
-    // str::from_utf8(slice::from_raw_parts(p, buf.len())).unwrap().to_owned()
-    // }
-    errno.to_string()
-}
-
-
-pub fn decode_error_kind(errno: i32) -> ErrorKind {
-    match errno as libc::c_int {
-        libc::ECONNREFUSED => ErrorKind::ConnectionRefused,
-        libc::ECONNRESET => ErrorKind::ConnectionReset,
-        libc::EPERM | libc::EACCES => ErrorKind::PermissionDenied,
-        libc::EPIPE => ErrorKind::BrokenPipe,
-        libc::ENOTCONN => ErrorKind::NotConnected,
-        libc::ECONNABORTED => ErrorKind::ConnectionAborted,
-        libc::EADDRNOTAVAIL => ErrorKind::AddrNotAvailable,
-        libc::EADDRINUSE => ErrorKind::AddrInUse,
-        libc::ENOENT => ErrorKind::NotFound,
-        libc::EINTR => ErrorKind::Interrupted,
-        libc::EINVAL => ErrorKind::InvalidInput,
-        libc::ETIMEDOUT => ErrorKind::TimedOut,
-        libc::EEXIST => ErrorKind::AlreadyExists,
-
-        // These two constants can have the same value on some systems,
-        // but different values on others, so we can't use a match
-        // clause
-        x if x == libc::EAGAIN || x == libc::EWOULDBLOCK => ErrorKind::WouldBlock,
-
-        _ => ErrorKind::Other,
-    }
 }
 
 #[cfg(test)]
 mod test {
-    use super::{Error, ErrorKind};
-    use error;
+    use super::{Error, ErrorKind, Repr, Custom};
+    use super::error;
     use fmt;
-    use sys::os::error_string;
 
     #[test]
     fn test_debug_error() {
         let code = 6;
-        let msg = error_string(code);
-        let err = Error { repr: super::Repr::Os(code) };
-        let expected = format!("Error {{ repr: Os {{ code: {:?}, message: {:?} }} }}",
-                               code,
-                               msg);
+        let msg = "Error";
+        let kind = ErrorKind::InvalidInput;
+        let err = Error {
+            repr: Repr::Custom(box Custom {
+                kind: ErrorKind::InvalidInput,
+                error: box Error {
+                    repr: super::Repr::Simple(ErrorKind::InvalidInput)
+                },
+            })
+        };
+        let expected = format!(
+            "Custom {{ \
+                kind: InvalidInput, \
+                error: Kind(InvalidInput) \
+            }}"
+        );
         assert_eq!(format!("{:?}", err), expected);
     }
 

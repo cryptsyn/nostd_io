@@ -11,8 +11,8 @@
 #![allow(missing_copy_implementations)]
 
 use core::fmt;
+use super::{Read, Initializer, Write, ErrorKind, BufRead};
 use core::mem;
-use super::{Read, Initializer, Write, ErrorKind, BufRead, Result};
 
 /// Copies the entire contents of a reader into a writer.
 ///
@@ -34,17 +34,17 @@ use super::{Read, Initializer, Write, ErrorKind, BufRead, Result};
 /// ```
 /// use std::io;
 ///
-/// # fn foo() -> result::Result<()> {
-/// let mut reader: &[u8] = b"hello";
-/// let mut writer: Vec<u8> = vec![];
+/// fn main() -> super::Result<()> {
+///     let mut reader: &[u8] = b"hello";
+///     let mut writer: Vec<u8> = vec![];
 ///
-/// io::copy(&mut reader, &mut writer)?;
+///     io::copy(&mut reader, &mut writer)?;
 ///
-/// assert_eq!(reader, &writer[..]);
-/// # Ok(())
-/// # }
+///     assert_eq!(&b"hello"[..], &writer[..]);
+///     Ok(())
+/// }
 /// ```
-pub fn copy<R: ?Sized, W: ?Sized>(reader: &mut R, writer: &mut W) -> Result<u64>
+pub fn copy<R: ?Sized, W: ?Sized>(reader: &mut R, writer: &mut W) -> super::Result<u64>
     where R: Read,
           W: Write
 {
@@ -69,17 +69,19 @@ pub fn copy<R: ?Sized, W: ?Sized>(reader: &mut R, writer: &mut W) -> Result<u64>
 
 /// A reader which is always at EOF.
 ///
-/// This struct is generally created by calling [`empty`][empty]. Please see
-/// the documentation of `empty()` for more details.
+/// This struct is generally created by calling [`empty`]. Please see
+/// the documentation of [`empty()`][`empty`] for more details.
 ///
-/// [empty]: fn.empty.html
+/// [`empty`]: fn.empty.html
 pub struct Empty {
     _priv: (),
 }
 
 /// Constructs a new handle to an empty reader.
 ///
-/// All reads from the returned reader will return `Ok(0)`.
+/// All reads from the returned reader will return [`Ok`]`(0)`.
+///
+/// [`Ok`]: ../result/enum.Result.html#variant.Ok
 ///
 /// # Examples
 ///
@@ -98,7 +100,7 @@ pub fn empty() -> Empty {
 
 impl Read for Empty {
     #[inline]
-    fn read(&mut self, _buf: &mut [u8]) -> Result<usize> {
+    fn read(&mut self, _buf: &mut [u8]) -> super::Result<usize> {
         Ok(0)
     }
 
@@ -109,7 +111,7 @@ impl Read for Empty {
 }
 impl BufRead for Empty {
     #[inline]
-    fn fill_buf(&mut self) -> Result<&[u8]> {
+    fn fill_buf(&mut self) -> super::Result<&[u8]> {
         Ok(&[])
     }
     #[inline]
@@ -152,7 +154,7 @@ pub fn repeat(byte: u8) -> Repeat {
 
 impl Read for Repeat {
     #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+    fn read(&mut self, buf: &mut [u8]) -> super::Result<usize> {
         for slot in &mut *buf {
             *slot = self.byte;
         }
@@ -201,11 +203,11 @@ pub fn sink() -> Sink {
 
 impl Write for Sink {
     #[inline]
-    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+    fn write(&mut self, buf: &[u8]) -> super::Result<usize> {
         Ok(buf.len())
     }
     #[inline]
-    fn flush(&mut self) -> Result<()> {
+    fn flush(&mut self) -> super::Result<()> {
         Ok(())
     }
 }
@@ -218,8 +220,8 @@ impl fmt::Debug for Sink {
 
 #[cfg(test)]
 mod tests {
-    use io::prelude::*;
-    use io::{copy, sink, empty, repeat};
+    use super::super::prelude::*;
+    use super::super::{copy, sink, empty, repeat};
 
     #[test]
     fn copy_copies() {
