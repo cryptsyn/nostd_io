@@ -33,4 +33,4 @@ panic = 'abort'
 [dependencies]
 memchr = { version = "1.0", default-features = false }
 libc = { version = "0.2", default-features = false }
-nostd_error = { git = "https://github.com/wmiller848/nostd_error.git", default-features = false }
+nostd_error = { git = "https://github.com/cryptsyn/nostd_error.git", default-features = false }
