@@ -8,8 +8,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use alloc::Vec;
-use alloc::String;
+use alloc::vec::Vec;
+use alloc::string::String;
 use alloc::boxed::Box;
 
 use core::cmp;
@@ -295,7 +295,7 @@ impl Write for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use alloc::Vec;
+    use alloc::vec::Vec;
 
     use super::super::prelude::*;
     use test;

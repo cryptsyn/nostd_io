@@ -10,7 +10,7 @@
 
 //! Buffering wrappers for I/O traits
 
-use alloc::Vec;
+use alloc::vec::Vec;
 use alloc::boxed::Box;
 
 use super::prelude::*;
@@ -915,8 +915,8 @@ impl<W: Write> fmt::Debug for LineWriter<W> where W: fmt::Debug {
 
 #[cfg(test)]
 mod tests {
-    use alloc::Vec;
-    use alloc::String;
+    use alloc::vec::Vec;
+    use alloc::string::String;
     use alloc::string::ToString;
 
     use super::super::prelude::*;

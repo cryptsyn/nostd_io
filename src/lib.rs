@@ -280,8 +280,8 @@ extern crate nostd_error as std_error;
 #[cfg(test)]
 extern crate test;
 
-use alloc::Vec;
-use alloc::String;
+use alloc::vec::Vec;
+use alloc::string::String;
 
 use core::cmp;
 use core::fmt;
@@ -2092,8 +2092,8 @@ impl<B: BufRead> Iterator for Lines<B> {
 
 #[cfg(test)]
 mod tests {
-    use alloc::Vec;
-    use alloc::String;
+    use alloc::vec::Vec;
+    use alloc::string::String;
     use alloc::string::ToString;
 
     use super::prelude::*;

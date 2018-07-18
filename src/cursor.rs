@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use alloc::Vec;
+use alloc::vec::Vec;
 use alloc::boxed::Box;
 
 use super::prelude::*;
@@ -365,7 +365,7 @@ impl Write for Cursor<Box<[u8]>> {
 
 #[cfg(test)]
 mod tests {
-    use alloc::Vec;
+    use alloc::vec::Vec;
 
     use super::super::prelude::*;
     use super::super::{Cursor, SeekFrom};
