@@ -22,15 +22,12 @@ panic = 'abort'
 opt-level = 1
 debug = 2
 debug-assertions = true
-panic = 'abort'
 
 [profile.bench]
 opt-level = 3
 debug = false
 debug-assertions = false
-panic = 'abort'
 
 [dependencies]
 memchr = { version = "1.0", default-features = false }
-libc = { version = "0.2", default-features = false }
 nostd_error = { git = "https://github.com/cryptsyn/nostd_error.git", default-features = false }

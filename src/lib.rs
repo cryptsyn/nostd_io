@@ -273,7 +273,6 @@
 
 #[macro_use]
 extern crate alloc;
-extern crate libc;
 extern crate memchr;
 extern crate nostd_error as std_error;
 
